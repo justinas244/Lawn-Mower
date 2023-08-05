@@ -1,4 +1,4 @@
-int sekimo_greitis = 140;
+
 unsigned long sekimo_perimetro_riba = 110;
 
 unsigned long last_sent;             // When did we last send?
@@ -20,7 +20,7 @@ void Laido_sekimas(bool reikalingas_pametimas) {
   kiek_laiko_jau_aptikes = now;
   pirminis_aptikimas = now;
   digitalWrite(Krovimo_pin, HIGH);
-
+  digitalWrite(filtro_maitinimas, HIGH);
   while (true) {
     now = millis();
     if (now - previousMillis >= sensoriu_nuskaitymo_intervalas) {
@@ -80,6 +80,10 @@ void Laido_sekimas(bool reikalingas_pametimas) {
       motor(sekimo_greitis, sekimo_greitis);
       last_sent = now;
     }
+    else if (kairesP >= sekimo_perimetro_riba || desinesP >= sekimo_perimetro_riba) {
+      motor(sekimo_greitis, sekimo_greitis);
+      last_sent = now;
+    }
     
     if ( now - last_sent >= (pametimo_timeout + pametimo_extra) && reikalingas_pametimas == 1) {
       last_sent = now;
@@ -105,7 +109,7 @@ void Laido_sekimas(bool reikalingas_pametimas) {
         letejimas(greitis_atgal, 0, 5, 0);
         //pasisukimas(sukimosi_greitis, sukimosi_laikas_Centrui ,r,sukimosi_greitejimo_laikas); //greitis, laikas sukimosi, puse, greitejimo,letejimo greitis
         apsisukimas(ultragarsiniu_pasisukimo_kampas[1], r, sukimosi_greitis, sukimosi_greitejimo_laikas);
-        greitejimas(0, greitis, 5, 1, 0);
+        //greitejimas(0, greitis, 5, 1, 0);
         pid_nulinimas();
         kampas();
         setpoint = laipsniai;
@@ -121,7 +125,7 @@ void Laido_sekimas(bool reikalingas_pametimas) {
         letejimas(greitis_atgal, 0, 5, 0);
         //pasisukimas(sukimosi_greitis, sukimosi_laikas_desine ,0,sukimosi_greitejimo_laikas); //greitis, laikas sukimosi, puse, greitejimo,letejimo greitis
         apsisukimas(ultragarsiniu_pasisukimo_kampas[2], 0, sukimosi_greitis, sukimosi_greitejimo_laikas);
-        greitejimas(0, greitis, 5, 1, 0);
+        //greitejimas(0, greitis, 5, 1, 0);
         pid_nulinimas();
         kampas();
         setpoint = laipsniai;
@@ -137,7 +141,7 @@ void Laido_sekimas(bool reikalingas_pametimas) {
         letejimas(greitis_atgal, 0, 5, 0);
         //pasisukimas(sukimosi_greitis+10, sukimosi_laikas_kaire ,1,sukimosi_greitejimo_laikas); //greitis, laikas sukimosi, puse, greitejimo,letejimo greitis
         apsisukimas(ultragarsiniu_pasisukimo_kampas[0], 1, sukimosi_greitis, sukimosi_greitejimo_laikas);
-        greitejimas(0, greitis, 5, 1, 0);
+        //greitejimas(0, greitis, 5, 1, 0);
         pid_nulinimas();
         kampas();
         setpoint = laipsniai;
@@ -150,6 +154,7 @@ void Laido_sekimas(bool reikalingas_pametimas) {
 }
 
 void laido_radimas() {
+  digitalWrite(filtro_maitinimas, HIGH);
   peilio_apsukos(1000);
   siuntimas_nameliui(4, 3);
   unsigned long now = millis();
@@ -192,7 +197,10 @@ void laido_radimas() {
       siuntimas_nameliui(3, 3);
       delay(intervalas_nuskaitymui);
       sensoriu_duomenis(1);
-      if (kairesP >= ribaKP) {
+      if (kairesP >= sekimo_perimetro_riba || desinesP >= sekimo_perimetro_riba) {
+         pasisukimas(sukimosi_greitis+10, 600 ,1,sukimosi_greitejimo_laikas);
+         motor(0,0);
+         delay(10);
         ivaziavimas_laidu(1);
         break;
       }
@@ -211,7 +219,7 @@ void laido_radimas() {
       siuntimas_nameliui(3, 3);
       delay(intervalas_nuskaitymui);
       sensoriu_duomenis(1);
-      if (kairesP >= ribaKP) {
+      if (kairesP >= sekimo_perimetro_riba) {
         ivaziavimas_laidu(1);
         break;
       }
@@ -230,7 +238,7 @@ void laido_radimas() {
       siuntimas_nameliui(3, 3);
       delay(intervalas_nuskaitymui);
       sensoriu_duomenis(1);
-      if (desinesP >= ribaDP) {
+      if (desinesP >= sekimo_perimetro_riba) {
         ivaziavimas_laidu(0);
         break;
       }
@@ -296,7 +304,7 @@ void kaires_perimetro_atsitraukimas() {
   greitejimas(0, greitis_atgal, 5, 0, atgal_vaziavimo_laikas); // nuo, iki, laikas, puse(priekis = 1, atgal = 0)
   letejimas(greitis_atgal, 0, 5, 0);
   apsisukimas(120, 1, sukimosi_greitis, sukimosi_greitejimo_laikas);
-  greitejimas(0, greitis, 5, 1, 0);
+ // greitejimas(0, greitis, 5, 1, 0);
   pid_nulinimas();
   kampas();
   setpoint = laipsniai;
@@ -311,7 +319,7 @@ void desines_perimetro_atsitraukimas() {
   letejimas(greitis_atgal, 0, 5, 0);
   // pasisukimas(sukimosi_greitis,sukimosi_laikas_Perimetro_desine ,0,sukimosi_greitejimo_laikas); //greitis, laikas sukimosi, puse, greitejimo,letejimo greitis
   apsisukimas(120, 0, sukimosi_greitis, sukimosi_greitejimo_laikas);
-  greitejimas(0, greitis, 5, 1, 0);
+ // greitejimas(0, greitis, 5, 1, 0);
   pid_nulinimas();
   kampas();
   setpoint = laipsniai;
@@ -320,7 +328,7 @@ void desines_perimetro_atsitraukimas() {
 
 void ivaziavimas_laidu(bool puse) {
   pypsejimas(100, 100, 3);
-
+   digitalWrite(filtro_maitinimas, HIGH);
   //greitejimas(0, sekimo_greitis, 3, 1, 1000);
   //letejimas(greitis, 0, 2, 1);
   for (int i = 30; i <= sekimo_greitis; i++) {

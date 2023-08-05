@@ -132,8 +132,8 @@ void letejimas(int nuo, int iki, int laikas, bool puse) {
   }
 }
 void greitejimas(int nuo, int iki, int laikas, bool puse, long laikas_pilnu) {
-   kampas();
-   setpoint = laipsniai;
+  kampas();
+  setpoint = laipsniai;
   while (stopas == false) {
     for (int i = nuo; i <= iki; i++) {
       avariniai_sensoriai();
@@ -149,10 +149,14 @@ void greitejimas(int nuo, int iki, int laikas, bool puse, long laikas_pilnu) {
         GK = digitalRead(GK_pin);
         GD = digitalRead(GD_pin);
 
-        if(GK == LOW || GD == LOW){i = iki; laikas = 0; break;}
+        if (GK == LOW || GD == LOW) {
+          i = iki;
+          laikas = 0;
+          break;
+        }
         //motor(-i, -i);
         kampas();
-        linijos_palaikymas_atgal(-i,setpoint);
+        linijos_palaikymas_atgal(-i, setpoint);
       }
       delay(laikas);
     }
@@ -164,15 +168,20 @@ void greitejimas(int nuo, int iki, int laikas, bool puse, long laikas_pilnu) {
         i = laikas_pilnu;
         break;
       }
-      if (puse == 1){  motor(iki, iki); }
+      if (puse == 1) {
+        motor(iki, iki);
+      }
       else {
         GK = digitalRead(GK_pin);
         GD = digitalRead(GD_pin);
 
-        if(GK == LOW || GD == LOW){ i = laikas_pilnu; break;}
+        if (GK == LOW || GD == LOW) {
+          i = laikas_pilnu;
+          break;
+        }
         //motor(-iki, -iki);
         kampas();
-        linijos_palaikymas_atgal(-iki,setpoint);
+        linijos_palaikymas_atgal(-iki, setpoint);
       }
       delay(1);
     }
@@ -182,7 +191,7 @@ void greitejimas(int nuo, int iki, int laikas, bool puse, long laikas_pilnu) {
 int taskas, atsisuke;
 
 void linijos_palaikymas(int norimas_greitis, int palaikymo_taskas) {
-  
+
   error = (palaikymo_taskas - laipsniai) * (-1);
   error = constrain(error, -70, 70);
 
@@ -213,7 +222,7 @@ float Kia = 1; //2.5
 float Kda = 1;
 
 void linijos_palaikymas_atgal(int norimas_greitis, int palaikymo_taskas) {
-  
+
   error = (palaikymo_taskas - laipsniai) * (-1);
   error = constrain(error, -70, 70);
 
@@ -311,14 +320,7 @@ void apsisukimas(long pasisukimo_kampas, bool puse, int pasisukimo_greitis, int 
   pasisukimo_kampas = laipsniai + pasisukimo_kampas * 2;
   //delay(5);
   for (int i = 50; i <= pasisukimo_greitis; i++) {
-     //sensoriai(1);
-     sensoriu_check = aptikti_sensoriai();
-    if(sensoriu_check !=0){
-      aptikta_kliutis = true;
-     greitejimas(0, greitis_atgal, greitejimo_laikas_atgal, 0, atgal_vaziavimo_laikas); // nuo, iki, laikas, puse(priekis = 1, atgal = 0)
-     letejimas(greitis_atgal, 0, 5, 0);
-      break;
-     }
+    sensoriai(1);
     if (stopas == true) {
       break;
     }
@@ -332,59 +334,48 @@ void apsisukimas(long pasisukimo_kampas, bool puse, int pasisukimo_greitis, int 
   }
   unsigned long nuskaitymui = millis();
   unsigned long sukimosi_taimeris = millis();
-   sensoriu_reset();
-   
+  sensoriu_reset();
+
   while (stopas == false || aptikta_kliutis == false) {
     kampas();
-    if (millis() - nuskaitymui >= 20) {
-      nuskaitymui = millis();
-      avariniai_sensoriai();
-      sensoriu_check = aptikti_sensoriai();
-    }
-   
+    sensoriu_check = aptikti_sensoriai();
+
     if (millis() - sukimosi_taimeris >= 6000) {
       sukimosi_taimeris = millis();
-      motor(0, 0);
+      //motor(0, 0);
+      break;
+    }
+
+    if (sensoriu_check != 0) {
+      motor(0,0);
+      delay(1000);
+      aptikta_kliutis = true;
+      greitejimas(0, greitis_atgal, greitejimo_laikas_atgal, 0, atgal_vaziavimo_laikas); // nuo, iki, laikas, puse(priekis = 1, atgal = 0)
+      letejimas(greitis_atgal, 0, 2, 0);
+      if(sensoriu_check == 2 || sensoriu_check == 3){
+          pasisukimas(sukimosi_greitis, 600 ,0,sukimosi_greitejimo_laikas);
+          greitejimas(0, greitis, 5, 1,0);
+         //apsisukimas(ultragarsiniu_pasisukimo_kampas[2],0,sukimosi_greitis, sukimosi_greitejimo_laikas);
+      }else{
+         pasisukimas(sukimosi_greitis+10, 600 ,1,sukimosi_greitejimo_laikas);
+         greitejimas(0, greitis, 5, 1,0);
+          //apsisukimas(ultragarsiniu_pasisukimo_kampas[0],1,sukimosi_greitis, sukimosi_greitejimo_laikas);
+      }
+         pid_nulinimas();
+         kampas();
+           pasisukimo_kampas = laipsniai;
+           setpoint = laipsniai;
+          sensoriu_reset();
+           aptikta_kliutis = true;
       break;
     }
     
-    if(sensoriu_check !=0){
-      aptikta_kliutis = true;
-     greitejimas(0, greitis_atgal, greitejimo_laikas_atgal, 0, atgal_vaziavimo_laikas); // nuo, iki, laikas, puse(priekis = 1, atgal = 0)
-     letejimas(greitis_atgal, 0, 5, 0);
-      break;
-     }
-     
-    if (pasisukimo_kampas == laipsniai || pasisukimo_kampas == (laipsniai + 13) || pasisukimo_kampas == (laipsniai - 13)) {
-      motor(0, 0);
+    if (pasisukimo_kampas == laipsniai || pasisukimo_kampas == (laipsniai + 25) || pasisukimo_kampas == (laipsniai - 25)) {
+      motor(greitis, greitis);
+      delay(10);
       break;
     }
-    else if (pasisukimo_kampas > laipsniai) {
-      motor(-pasisukimo_greitis, pasisukimo_greitis);
-    }
-    else if (pasisukimo_kampas < laipsniai) {
-      motor(pasisukimo_greitis, -pasisukimo_greitis);
-    }
-    else if (pasisukimo_kampas - laipsniai >= 1500 || pasisukimo_kampas - laipsniai <= -1500) {
-      motor(0, 0);
-      break;
-    }
+    linijos_palaikymas(pasisukimo_greitis, pasisukimo_kampas);
   }
-  
-  for (int i = pasisukimo_greitis; i >= 0; i--) {
-    avariniai_sensoriai();
-    if (stopas == true) {
-      break;
-    }
-    if (puse == 0) {
-      motor(-i, i);
-    }
-    else {
-      motor(i, -i);
-    }
-    delay(greitejimo_laikas);
-  }
-    isejimas:
-    motor(0,0);
 }
 

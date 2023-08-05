@@ -1,10 +1,17 @@
 void krovimo_busena() {
-  siuntimas_nameliui(1, 3);
+  gavimas_is_namelio();
+  delay(2000);
   lcd.clear();
   digitalWrite(Krovimo_pin, HIGH);
   digitalWrite(filtro_maitinimas, LOW);
+  
   bool prasidejo_krovimas = false;
   bool uzdarytos_duris = false;
+  rainDelay = lietaus_laukimo_v * 3600000 + lietaus_laukimo_m *60000;
+  
+  if(state == 1){ uzdarytos_duris = true;}
+  else{ uzdarytos_duris = false;}
+  
   sroves_sensorius();
   if (krovimo_srove > 0.35) {
     prasidejo_krovimas = true;
@@ -17,23 +24,42 @@ void krovimo_busena() {
     vartu_uzdarymas();   //uzdarom namelio duris
      duris_atidarytos = false;
      uzdarytos_duris = true;
+     delay(2000);
+     siuntimas_nameliui(1, 3);
   }
    
   if (auto_start == false && duris_atidarytos == true) {
     vartu_uzdarymas(); //uzdarom namelio duris su ijungtu krovimu.
     duris_atidarytos = false;
     uzdarytos_duris = true;
+    delay(2000);
+    siuntimas_nameliui(1, 3);
   }
-
+siuntimas_nameliui(1, 3);
   while (true) {
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= 1000) {
+    if (currentMillis - previousMillis >= 2000) {
       previousMillis = currentMillis;
       sroves_sensorius();
       pasileidimo_laikas = laiko_konvertavimas(on_hour[weekDay],on_min[weekDay]);
       pabaigos_laikas = laiko_konvertavimas(off_hour[weekDay],off_min[weekDay]);
       dabartinis_laikas = laiko_konvertavimas(hour,minutes);
     }
+
+    if(lietus == 2){ rain_status = true; }
+    else if(lietus == 1){ rain_status = false; }
+
+    if (rain_status == true && isRaining == false) {
+      // Rain just started, record the start time
+      isRaining = true;
+    } else if (rain_status == false && isRaining == true) {
+      // Rain has stopped, record the stop time and start the 6-hour timer
+      isRaining = false;
+      rainStartTime = millis();
+    }
+    if (isRaining == false && (millis() - rainStartTime >= rainDelay)) { sausa = true; }
+    else{ sausa = false; }
+    
     
    if(dirbimo[weekDay] == 1 && rankinis_paleidimas == false){
        if(dabartinis_laikas>=pasileidimo_laikas && dabartinis_laikas<=pabaigos_laikas){
@@ -44,9 +70,10 @@ void krovimo_busena() {
        }
      }
      
-    if (krovimo_srove <= 0.55 &&  prasidejo_krovimas == true) {
+    if (krovimo_srove <= 0.75 &&  prasidejo_krovimas == true && akumas >= 14.8) {
       digitalWrite(Krovimo_pin, LOW);
       busena = 9;
+      namu_pozicija = true;
       delay(1000);
       break;
     }
@@ -58,11 +85,20 @@ void krovimo_busena() {
     if (auto_start == false && uzdarytos_duris == false) {
       vartu_uzdarymas(); //uzdarom namelio duris su ijungtu krovimu.
       uzdarytos_duris = true;
+      delay(2000);
+      siuntimas_nameliui(1, 3);
+    }
+    
+    if(isRaining == true && uzdarytos_duris == false){
+      vartu_uzdarymas(); //uzdarom namelio duris su ijungtu krovimu. Uzdarom duris kad neprilytu i vidu
+      uzdarytos_duris = true;
+      delay(2000);
+      siuntimas_nameliui(1, 3);
     }
     
     gavimas_is_nano();
     gavimas_is_namelio();
-
+    
     lcd.setCursor(2, 0);
     lcd.print("Krovimo busena");
 
@@ -99,7 +135,7 @@ void Ivaziavimo_patikra() {
   lcd.print("Ivaziavimo patikra");
   digitalWrite(Krovimo_pin, HIGH);
   siuntimas_nameliui(5, 3);
-  delay(2000);
+  delay(3000);
 
   while (true) {
     sroves_sensorius();
@@ -110,7 +146,7 @@ void Ivaziavimo_patikra() {
       break;
     }
     else {
-      isvaziavimas_is_namelio(6000, 1);
+      isvaziavimas_is_namelio(9000, 1);
       busena = 10;
       break;
     }

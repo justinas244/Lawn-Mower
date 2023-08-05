@@ -1,9 +1,11 @@
 unsigned long  veikimo_timeout = 120000;
 unsigned long baterijos_patikros_laikas = 5000;
 void vaziavimas() {
-
+  digitalWrite(filtro_maitinimas, HIGH);
   veikimo_laikas = millis();
   baterijos_check = millis();
+  greitis = 140;
+  sekimo_greitis = 120;
   while (true) {
     if (millis() - previousMillis >= sensoriu_nuskaitymo_intervalas) {
       previousMillis = millis();
@@ -15,9 +17,6 @@ void vaziavimas() {
       baterijos_check = millis();
       if (akumas <= iskrovimo_riba) {
         iskrautas++;
-      }
-      else {
-        iskrautas = 0;
       }
     }
 
@@ -57,12 +56,26 @@ void vaziavimas() {
     pabaigos_laikas = laiko_konvertavimas(off_hour[weekDay], off_min[weekDay]);
     dabartinis_laikas = laiko_konvertavimas(hour, minutes);
 
+    if(lietus == 2){ 
+        auto_start = false;
+        busena = 7;
+        peilio_apsukos(1000);
+        peilio_greitis = 1000;
+        sekimo_greitis = 120;
+        motor(0, 0);
+        delay(3000);
+        baigta_darbo_diena = true;
+        rankinis_paleidimas = false;
+        break;
+    }
+    
     if (dirbimo[weekDay] == 1 && rankinis_paleidimas == false) {
       if (dabartinis_laikas >= pabaigos_laikas - 1) {
         auto_start = false;
         busena = 7;
         peilio_apsukos(1000);
         peilio_greitis = 1000;
+        sekimo_greitis = 120;
         motor(0, 0);
         delay(5000);
         baigta_darbo_diena = true;
@@ -78,6 +91,7 @@ void vaziavimas() {
         peilio_greitis = 1000;
         motor(0, 0);
         delay(5000);
+        sekimo_greitis = 120;
         if (rankinis_paleidimas == true) {
           baigta_darbo_diena = true;
         } else {
@@ -87,11 +101,11 @@ void vaziavimas() {
       }
     }
     else {
-      if (akumas <= 10.0) {
-        peilio_apsukos(peilio_greitis + 100);
+      if (akumas <= 10.2) {
+        peilio_apsukos(peilio_greitis + 50);
         greitis = 150;
-        greitis_atgal = 220;
-        sukimosi_greitis = 190;
+        greitis_atgal = 240;
+        sekimo_greitis = 130;
         sukimosi_laikas_Perimetro_kaire = 420;
         sukimosi_laikas_Perimetro_desine = 350;
         sukimosi_laikas_Centrui = 360;
@@ -99,8 +113,9 @@ void vaziavimas() {
         sukimosi_laikas_kaire = 420;
         atgal_vaziavimo_laikas = 80;
       }
-      else {
-        peilio_apsukos(peilio_greitis);
+      else{
+        greitis_atgal = 220;
+        sekimo_greitis = 120;
       }
     }
     priekines_linijos_sensoriu_aptikimas();
@@ -110,7 +125,7 @@ void vaziavimas() {
        greitejimas(0, greitis_atgal, greitejimo_laikas_atgal, 0, atgal_vaziavimo_laikas); // nuo, iki, laikas, puse(priekis = 1, atgal = 0)
        letejimas(greitis_atgal, 0, 5, 0);
        apsisukimas(ultragarsiniu_pasisukimo_kampas[1],r,sukimosi_greitis, sukimosi_greitejimo_laikas);
-       greitejimas(0, greitis, 5, 1,0);
+       //greitejimas(0, greitis, 5, 1,0);
        pid_nulinimas();
       kampas();
       setpoint = laipsniai;
@@ -122,8 +137,8 @@ void vaziavimas() {
       pypsejimas(100, 100, 1);
       greitejimas(0, greitis_atgal, greitejimo_laikas_atgal, 0, atgal_vaziavimo_laikas); // nuo, iki, laikas, puse(priekis = 1, atgal = 0)
       letejimas(greitis_atgal, 0, 5, 0);
-      apsisukimas(120, 1, sukimosi_greitis, sukimosi_greitejimo_laikas);
-      greitejimas(0, greitis, 5, 1, 0);
+      apsisukimas(100, 1, sukimosi_greitis, sukimosi_greitejimo_laikas);
+      //greitejimas(0, greitis, 5, 1, 0);
       pid_nulinimas();
       kampas();
       setpoint = laipsniai;
@@ -136,8 +151,8 @@ void vaziavimas() {
       greitejimas(0, greitis_atgal, greitejimo_laikas_atgal, 0, atgal_vaziavimo_laikas); // nuo, iki, laikas, puse(priekis = 1, atgal = 0)
       letejimas(greitis_atgal, 0, 5, 0);
       // pasisukimas(sukimosi_greitis,sukimosi_laikas_Perimetro_desine ,0,sukimosi_greitejimo_laikas); //greitis, laikas sukimosi, puse, greitejimo,letejimo greitis
-      apsisukimas(120, 0, sukimosi_greitis, sukimosi_greitejimo_laikas);
-      greitejimas(0, greitis, 5, 1, 0);
+      apsisukimas(100, 0, sukimosi_greitis, sukimosi_greitejimo_laikas);
+     // greitejimas(0, greitis, 5, 1, 0);
       pid_nulinimas();
       kampas();
       setpoint = laipsniai;

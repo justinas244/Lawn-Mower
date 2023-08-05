@@ -30,6 +30,17 @@ byte laikrodis[] = {
   B00000
 };
 
+byte lasas[] = {
+  B00100,
+  B00100,
+  B01110,
+  B01110,
+  B11111,
+  B11111,
+  B11111,
+  B01110
+};
+
 int namu_mygtukas;
 
 int laipsniai;
@@ -206,14 +217,15 @@ float error = 0, P = 0, I = 0, D = 0, V = 0;
 float previous_error = 0, previous_I = 0;
 
 int r = 0;
-int greitis_atgal = 200;
+int greitis_atgal = 220;
 int sukimosi_greitis = 180;
+int sekimo_greitis = 140;
 
-int greitejimo_laikas_atgal = 5;
+int greitejimo_laikas_atgal = 4;
 int atgal_vaziavimo_laikas = 60;
 int atgal_vaziavimo_laikas_Perimetro = 100;
 
-int sukimosi_greitejimo_laikas = 4;
+int sukimosi_greitejimo_laikas = 0;
 int sukimosi_laikas_Centrui = 340;
 int sukimosi_laikas_desine = 280;
 int sukimosi_laikas_kaire = 380;
@@ -252,11 +264,20 @@ bool baigta_darbo_diena = false;
 bool rankinis_paleidimas = false;
 bool duris_atidarytos = false;
 
+bool rain_status = false;
+bool isRaining = false;
+unsigned long rainStartTime = 0;
+int lietaus_laukimo_v = 6;
+int lietaus_laukimo_m = 0;
+unsigned long rainDelay =0; //6 valandu laikotarpis
+bool sausa = true;
+
 void setup() {
   lcd.init();
   lcd.backlight();
   lcd.createChar(0 , batlevel);
   lcd.createChar(1 , laikrodis);
+  lcd.createChar(2,  lasas);
 
   Wire.begin();
   Wire.setWireTimeout(3000, true);
@@ -293,7 +314,7 @@ void setup() {
   pinMode(Namu_desines, INPUT);
 
   digitalWrite(mygtuku_maitinimas, LOW);
-  digitalWrite(filtro_maitinimas, LOW);
+  digitalWrite(filtro_maitinimas, HIGH);
   digitalWrite(Krovimo_pin, LOW);
   motor(0, 0);
 
@@ -303,7 +324,9 @@ void setup() {
   lcd.print("V2.0 Beta");
   Peilio_aktyvavimas();
   eepromo_nuskaitymas();
-
+  
+  rainDelay = lietaus_laukimo_v * 3600000 + lietaus_laukimo_m *60000;
+   
   //komposo_nustatymai();
   giroskopo_ofsetai();
 
@@ -350,6 +373,7 @@ void loop() {
   }
   else if (busena == 2) {
     gavimas_is_nano();
+    gavimas_is_namelio();
     digitalWrite(mygtuku_maitinimas, LOW);
     digitalWrite(filtro_maitinimas, LOW);
     peilio_apsukos(1000);
@@ -360,24 +384,53 @@ void loop() {
     mygtukai();
     if (stop_mygtukas == HIGH) {
       delay(1000);
-      if (auto_start == true) {
-        rankinis_paleidimas = false;
-      }
-      else {
-        rankinis_paleidimas = true;
-      }
-      baigta_darbo_diena = false;
-      nustatymas_kur_esu();
-      if (namu_pozicija == true) {
-        if (duris_atidarytos == false) {
-          vartu_atidarymas();
+       if(dirbimo[weekDay] == 1){
+          pasileidimo_laikas = laiko_konvertavimas(on_hour[weekDay],on_min[weekDay]);
+          pabaigos_laikas = laiko_konvertavimas(off_hour[weekDay],off_min[weekDay]);
+          dabartinis_laikas = laiko_konvertavimas(hour,minutes);
+
+          if(dabartinis_laikas>=pasileidimo_laikas-pasileidimas_anksciau && dabartinis_laikas<pabaigos_laikas){
+                 rankinis_paleidimas = false;
+                 baigta_darbo_diena = false;
+                 if(namu_pozicija == false){ nustatymas_kur_esu(); }
+                 if (namu_pozicija == true) {
+                   if(duris_atidarytos == false){
+                      vartu_atidarymas();
+                    }
+                   busena = 8;
+                   
+                 }
+                 else {
+                   paleidimas();
+                  
+                 }
+           }
+           else{
+             kampas();
+             setpoint = laipsniai;
+             busena = 5;
+                lcd.clear();
+                lcd.setCursor(1, 0);
+                lcd.print("Rankinis Paleidimas");
+                delay(3000);
+             
+           }
         }
-        busena = 8;
-      }
-      else {
-        paleidimas();
-      }
-      delay(100);
+        else{
+          rankinis_paleidimas = true;
+           baigta_darbo_diena = false;
+           nustatymas_kur_esu();
+            if (namu_pozicija == true) {
+              if (duris_atidarytos == false) {
+                vartu_atidarymas();
+              }
+              busena = 8;
+            }
+            else {
+              paleidimas();
+            }
+         delay(100);
+       }
     }
     sensoriu_duomenis(0);
     /*else if (stop_mygtukas == HIGH && aukstis >= pakelimo_riba) {

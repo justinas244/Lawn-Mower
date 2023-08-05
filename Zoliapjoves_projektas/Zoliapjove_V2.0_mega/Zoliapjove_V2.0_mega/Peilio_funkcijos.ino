@@ -31,6 +31,7 @@ void peilio_greicio_nustatymas(){
    lcd.print("Zole: ");
    lcd.print(zoles_aukstis);
     peilio_greitis = keitiklis(zoles_aukstis,2.5,5,min_peilio_greitis,max_peilio_greitis);
+    peilio_greitis = 1300;
   lcd.setCursor(0,1);
   lcd.print("Peilis: ");
   lcd.print(peilio_greitis);

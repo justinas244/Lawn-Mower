@@ -1,5 +1,6 @@
 String ddays[7] = {"Pr", "An", "Tr","Ke", "Pn", "Se","S"};
 void laukimo_busena() {
+  digitalWrite(filtro_maitinimas, LOW);
   lcd.clear();
   gavimas_is_nano();
   siuntimas_nameliui(0, 4);
@@ -8,10 +9,13 @@ void laukimo_busena() {
   
   int v = 0;  // valandos ligi paleidimo
   int mm = 0; // minutes ligi paleidimo
-  
+  bool galima_vaziuoti = true;
+   
   pasileidimo_laikas = laiko_konvertavimas(on_hour[weekDay],on_min[weekDay]);
   pabaigos_laikas = laiko_konvertavimas(off_hour[weekDay],off_min[weekDay]);
   dabartinis_laikas = laiko_konvertavimas(hour,minutes);
+
+  rainDelay = lietaus_laukimo_v * 3600000 + lietaus_laukimo_m *60000;
   
   while (true) {
     gavimas_is_namelio();
@@ -21,8 +25,28 @@ void laukimo_busena() {
     pasileidimo_laikas = laiko_konvertavimas(on_hour[weekDay],on_min[weekDay]);
     pabaigos_laikas = laiko_konvertavimas(off_hour[weekDay],off_min[weekDay]);
     dabartinis_laikas = laiko_konvertavimas(hour,minutes);
+    
+    if(namo_mygtukas == 1){
+      namu_pozicija = true;
+    }
 
+    if(lietus == 2){ rain_status = true; sausa = false;}
+    else if(lietus == 1){ rain_status = false; }
 
+    if (rain_status == true && isRaining == false) {
+      // Rain just started, record the start time
+      isRaining = true;
+      sausa = false; 
+    } else if (rain_status == false && isRaining == true) {
+      // Rain has stopped, record the stop time and start the 6-hour timer
+      isRaining = false;
+      rainStartTime = millis();
+    }
+    
+    if (isRaining == false && (millis() - rainStartTime >= rainDelay)) { sausa = true; }
+    else{ sausa = false; }
+
+    if(sausa == true){
     if(dirbimo[weekDay] == 1){
        if(dabartinis_laikas <= pasileidimo_laikas - pasileidimas_anksciau){
         v = (pasileidimo_laikas -pasileidimas_anksciau - dabartinis_laikas)/60;
@@ -34,7 +58,12 @@ void laukimo_busena() {
         lcd.print("val ");
         lcd.print(mm);
         lcd.print("min ");
-         if(v== 4 && mm == 0){ busena = 6; break; }
+         if(v== 3 && mm == 30){ busena = 6; break; }
+         if(state != 1 && dabartinis_laikas <= pasileidimo_laikas - 20){
+           vartu_uzdarymas();   //uzdarom namelio duris
+           delay(2000);
+          siuntimas_nameliui(0, 4);
+         }
        }
        if(dabartinis_laikas >= pabaigos_laikas) {
            lcd.setCursor(2, 3);
@@ -44,7 +73,34 @@ void laukimo_busena() {
      else{
        lcd.setCursor(2, 3);
        lcd.print("Liko: Kita diena");
+        if(state != 1){
+           vartu_uzdarymas();   //uzdarom namelio duris
+           delay(2000);
+          siuntimas_nameliui(0, 4);
+         }
      }
+    }
+    else{
+
+        v  = (laiko_konvertavimas(lietaus_laukimo_v,lietaus_laukimo_m) - ms_min(millis() - rainStartTime))/60;
+        mm = (laiko_konvertavimas(lietaus_laukimo_v,lietaus_laukimo_m) - ms_min(millis() - rainStartTime))-(v*60);
+        
+        lcd.setCursor(4, 2);
+        lcd.print("Lietaus rez. ");
+        lcd.setCursor(5, 3);
+        lcd.print(v);
+        lcd.print("val ");
+        lcd.print(mm);
+        lcd.print("min ");
+        
+        if(v== 3 && mm == 30){ busena = 6; break; }
+        
+        if(state != 1){
+           vartu_uzdarymas();   //uzdarom namelio duris
+           delay(2000);
+          siuntimas_nameliui(0, 4);
+         }
+    }
      
     lcd.setCursor(3, 1);
     lcd.print("Laukimo busena");
@@ -80,10 +136,10 @@ void laukimo_busena() {
       break;
     }
     ///////////////////// auto isvaziavimas //////////////////////////////////////
-     if(auto_start == true){
+     if(auto_start == true && sausa == true && hour>=6){
          rankinis_paleidimas = false;
          baigta_darbo_diena = false;
-         nustatymas_kur_esu();
+         if(namu_pozicija == false){ nustatymas_kur_esu(); }
          if (namu_pozicija == true) {
            if(duris_atidarytos == false){
               vartu_atidarymas();
@@ -96,8 +152,9 @@ void laukimo_busena() {
            break;
          }
      }
-     if(dirbimo[weekDay] == 1){
-       if(dabartinis_laikas>=pasileidimo_laikas-pasileidimas_anksciau && dabartinis_laikas<pabaigos_laikas){
+     
+     if(dirbimo[weekDay] == 1 && hour>=6){
+       if(dabartinis_laikas>=pasileidimo_laikas-pasileidimas_anksciau && dabartinis_laikas<pabaigos_laikas && sausa == true){
          auto_start = true;
        }
        else{
@@ -106,7 +163,7 @@ void laukimo_busena() {
      }
     ////////////////////////////////////////////////////////////////////////////////
 
-    if (stop_mygtukas == HIGH) {
+    if (stop_mygtukas == HIGH && hour>=6) {
       lcd.clear();
       lcd.setCursor(1, 0);
       lcd.print("Rankinis Paleidimas");
@@ -114,6 +171,7 @@ void laukimo_busena() {
       rankinis_paleidimas = true;
       baigta_darbo_diena = false;
       auto_start = false;
+      if(namu_pozicija == false){ nustatymas_kur_esu(); }
       nustatymas_kur_esu();
       if (namu_pozicija == true) {
           if(duris_atidarytos == false){

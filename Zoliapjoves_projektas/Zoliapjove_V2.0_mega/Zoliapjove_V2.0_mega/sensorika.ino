@@ -14,11 +14,19 @@ void sensoriai(bool sauga) {
   atstumasD = ultragarso_atstumas (desines_T, desines_E, 2);
   atstumasC = ultragarso_atstumas (centro_T,  centro_E,  1);
   atstumasK = ultragarso_atstumas (kaires_T,  kaires_E,  0);
-
-  PK = digitalRead(PK_pin);
-  PD = digitalRead(PD_pin);
-  GK = digitalRead(GK_pin);
-  GD = digitalRead(GD_pin);
+  
+  if(hour>=16 && hour<=20){
+    PK = HIGH;
+    PD = HIGH;
+    GK = HIGH;
+    GD = HIGH;
+  }
+  else{
+    PK = digitalRead(PK_pin);
+    PD = digitalRead(PD_pin);
+    GK = digitalRead(GK_pin);
+    GD = digitalRead(GD_pin);
+  }
   
   /*Serial.print(atstumasK);
   Serial.print("     ");
@@ -67,7 +75,7 @@ void avariniai_sensoriai(){
      siuntimas_nameliui(0,4);
      delay(3000);
     }
-    delay(5);
+    //delay(5);
 }
 
 
@@ -130,7 +138,7 @@ void priekines_linijos_sensoriu_aptikimas(){
     letejimas(greitis_atgal, 0, 5, 0);
     //pasisukimas(sukimosi_greitis, sukimosi_laikas_Centrui ,r,sukimosi_greitejimo_laikas); //greitis, laikas sukimosi, puse, greitejimo,letejimo greitis
     apsisukimas(ultragarsiniu_pasisukimo_kampas[1],r,sukimosi_greitis, sukimosi_greitejimo_laikas);
-    greitejimas(0, greitis, 5, 1,0);
+    //greitejimas(0, greitis, 5, 1,0);
     pid_nulinimas();
     //komposas();
     kampas();
@@ -146,7 +154,7 @@ void priekines_linijos_sensoriu_aptikimas(){
     letejimas(greitis_atgal, 0, 5, 0);
     //pasisukimas(sukimosi_greitis, sukimosi_laikas_desine ,0,sukimosi_greitejimo_laikas); //greitis, laikas sukimosi, puse, greitejimo,letejimo greitis
     apsisukimas(ultragarsiniu_pasisukimo_kampas[2],0,sukimosi_greitis, sukimosi_greitejimo_laikas);
-    greitejimas(0, greitis, 5, 1,0);
+   // greitejimas(0, greitis, 5, 1,0);
     pid_nulinimas();
     kampas();
     setpoint = laipsniai;
@@ -161,7 +169,7 @@ void priekines_linijos_sensoriu_aptikimas(){
     letejimas(greitis_atgal, 0, 5, 0);
     //pasisukimas(sukimosi_greitis+10, sukimosi_laikas_kaire ,1,sukimosi_greitejimo_laikas); //greitis, laikas sukimosi, puse, greitejimo,letejimo greitis
     apsisukimas(ultragarsiniu_pasisukimo_kampas[0],1,sukimosi_greitis, sukimosi_greitejimo_laikas);
-    greitejimas(0, greitis, 5, 1,0);
+    //greitejimas(0, greitis, 5, 1,0);
     pid_nulinimas();
     kampas();
     setpoint = laipsniai;

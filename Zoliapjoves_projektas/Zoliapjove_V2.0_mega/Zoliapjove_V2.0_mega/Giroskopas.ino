@@ -9,6 +9,7 @@ void kampas(){
 void giroskopo_ofsetai(){
   mpu6050.begin();
   mpu6050.calcGyroOffsets(true);
+  delay(2000);
 }
 
 void giroskopo_meniu(){

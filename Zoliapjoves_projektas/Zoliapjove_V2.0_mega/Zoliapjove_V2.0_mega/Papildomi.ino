@@ -164,3 +164,7 @@ int laiko_konvertavimas(int val,int mins){
   return val*60+mins;
 }
 
+int ms_min(unsigned long sekundes){
+  return sekundes/60000 ;
+}
+

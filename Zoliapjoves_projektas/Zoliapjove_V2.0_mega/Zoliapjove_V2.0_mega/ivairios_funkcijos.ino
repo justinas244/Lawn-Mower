@@ -375,7 +375,7 @@ void valymo_busena() {
 }
 void kampo_parinkimas() {
   randomSeed(analogRead(A15));
-  int puse = random(0, 10);
+  int puse = random(0, 11);
 
   if (puse >= 5) {
     puse = 1;
@@ -385,16 +385,17 @@ void kampo_parinkimas() {
   }
 
   int kampas = random(60, 130);
-  apsisukimas(kampas, puse, sukimosi_greitis, sukimosi_greitejimo_laikas);
+  apsisukimas(kampas, 1, sukimosi_greitis, sukimosi_greitejimo_laikas);
 
 }
 void isvaziavimas_is_namelio(unsigned long timeoutas, int tipas) {
+  digitalWrite(filtro_maitinimas, HIGH);
   unsigned long now = millis();
   last_sent = now;
   previousMillis = now;
   kampas();
   lcd.clear();
-  siuntimas_nameliui(4, 3);
+  siuntimas_nameliui(2, 3);
   delay(1000);
   kampas();
   setpoint = laipsniai;
@@ -406,7 +407,7 @@ void isvaziavimas_is_namelio(unsigned long timeoutas, int tipas) {
       if (tipas == 0) {
         kampo_parinkimas();
         motor(0, 0);
-        delay(3000);
+        delay(100);
         paleidimas();
       }
       else if ( tipas == 1) {
