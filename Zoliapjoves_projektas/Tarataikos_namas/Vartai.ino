@@ -26,10 +26,11 @@ void uzdarymas_vartu() {
     mygtuku_nuskaitymas();
     siuntimas_robotui();
     if(uzdarymo_mygtukas == LOW){
+      delay(1500);
       duru_busena = 0;
       duru_state = 1;
       motor(0);
-      delay(3000);
+      delay(2000);
       break;
     }
     else{
